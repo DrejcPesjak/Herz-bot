@@ -6,8 +6,11 @@ import skupno.MnozicaKart;
 import skupno.Konstante;
 import java.util.Random;
 import java.util.Arrays;
+import java.io.PrintWriter;
+import java.io.FileNotFoundException;
 
-public class Stroj_Qlearner2 implements Stroj {
+
+public class Stroj_Qlearner2_1 implements Stroj {
 
 	private final Random rand;
 	private MnozicaKart vRoki;
@@ -21,7 +24,7 @@ public class Stroj_Qlearner2 implements Stroj {
 	private int stPartije; //za printanje Qtabele po (50000) partiji
 
 	//konstruktor
-	public Stroj_Qlearner2() {
+	public Stroj_Qlearner2_1() {
 		Qtabela = new float[52][52][52][52];
 			// akcije = new short[13][4];	//13 stihov, po 4 karte
 		this.rand = new Random();
@@ -102,8 +105,12 @@ public class Stroj_Qlearner2 implements Stroj {
 			posodobiQtabelo(-tocke[(polozaj+1)%4]);
 		}
 
-		if(stPartije >= 200000)
-			printQtabela();
+		try{
+			if(stPartije >= 200000)
+				printQtabela();
+		} catch(FileNotFoundException fnfe) {
+			System.out.println(fnfe);
+		}	
 
 		EPSILON += 0.0000066f;
 	}
@@ -230,37 +237,42 @@ public class Stroj_Qlearner2 implements Stroj {
 		return produkt;
 	}
 
-	private void printQtabela() {
-
-		System.out.print("{");
+	private void printQtabela() throws FileNotFoundException {
+		try{			
+			PrintWriter writer = new PrintWriter("tabela.txt");
+			writer.print("{");
 			for(int cetrta = 0; cetrta < 52; cetrta++) {
-				System.out.print("{");
+				writer.print("{");
 				for(int tretja = 0; tretja < 52; tretja++) {
-					System.out.print("{");
+					writer.print("{");
 					for(int druga = 0; druga < 52; druga++) {
-						System.out.print("{");
+						writer.print("{");
 						for(int prva = 0; prva < 52; prva++) {
 							if(prva != 51) {
-								System.out.print(Qtabela[0][0][druga][prva] + "f, ");
+								writer.print(Qtabela[0][0][druga][prva] + "f, ");
 							} else {
 								if(druga != 51)
-									System.out.print(Qtabela[cetrta][tretja][druga][prva] + "f}, ");
+									writer.print(Qtabela[cetrta][tretja][druga][prva] + "f}, ");
 								else
-									System.out.print(Qtabela[cetrta][tretja][druga][prva] + "f}");
+									writer.print(Qtabela[cetrta][tretja][druga][prva] + "f}");
 							}
 						}
 					}
 					if(tretja != 51)
-						System.out.print("}, ");
+						writer.print("}, ");
 					else
-						System.out.print("}");
+						writer.print("}");
 				}
 				if(cetrta != 51)
-					System.out.print("}, ");
+					writer.print("}, ");
 				else
-					System.out.print("}");
+					writer.print("}");
 			}
-			System.out.println("}");
+			writer.println("}");
+			writer.close();
+		} catch (FileNotFoundException fnfe) {
+			System.out.println(fnfe);
+		}
 
 	}
 }
