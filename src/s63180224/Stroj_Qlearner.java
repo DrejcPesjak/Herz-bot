@@ -7,31 +7,38 @@ import skupno.Konstante;
 import java.util.Random;
 import java.util.Arrays;
 
-public class Stroj_Qlearner implements Stroj {
-	
+public class Stroj_Qlearner2 implements Stroj {
+
 	private final Random rand;
 	private MnozicaKart vRoki;
-	private double[][][] Qtabela;	//[stih][barva][vrednost]
-	private static final double ALPHA = 0.8;	//update za vsako prejsnje stanje;
-	private double EPSILON = 0.00002; //procent s katerim bo izbral max vrednost
-	private int[][] akcije; 
+	private float[][][][] Qtabela;	//[moja_karta][jaz+1][soigralec][jaz-1]
+	private static final float ALPHA = 0.8f;	//update za vsako prejsnje stanje;
+	private float EPSILON = 0.0000066f; //procent s katerim bo izbral max vrednost
+	private short[][] akcije; //[stevilkaStiha][indeksi 4 kart]
 	private int zacetnik;
 	private int polozaj;
-	private Karta prva;
-	//private Karta[] karteNaMizi;
-	private int stPartije;
-	
+	private short[] karteNaMizi;
+	private int stPartije; //za printanje Qtabele po (50000) partiji
+
 	//konstruktor
-	public Stroj_Qlearner() {
-		Qtabela = new double[13][4][13];
-			 akcije = new int[2][13];	//katera karta je bila izbrana [0]=barva [1]=vrednost  13=stkart
+	public Stroj_Qlearner2() {
+		Qtabela = new float[52][52][52][52];
+			// akcije = new short[13][4];	//13 stihov, po 4 karte
 		this.rand = new Random();
-		//karteNaMizi = new Karta[4];
 		stPartije = 0;
     }
 
     @Override
 	public void novaPartija(int polozaj, MnozicaKart karte){
+		//reset akcije
+		akcije = new short[13][4];
+
+		for(int i = 0; i<13; i++){
+			for(int j = 0; j<4; j++){
+				akcije[i][j] = -1;
+			}
+		}
+
 		vRoki = karte;
 		this.polozaj = polozaj;
 		stPartije++;
@@ -40,12 +47,15 @@ public class Stroj_Qlearner implements Stroj {
 	@Override
 	public void pricetekStiha(int zacetnik){
 		this.zacetnik = zacetnik;
+		karteNaMizi = new short[]{-1,-1,-1,-1};
 	}
 
 	@Override
 	public void sprejmiPotezo(int akter, Karta karta){
-		if(akter == zacetnik)
-			prva = karta;
+		int shraniIx = (akter+4-polozaj)%4;		
+		karteNaMizi[shraniIx] = (short)karta.indeks();
+
+		//System.out.println(Arrays.toString(karteNaMizi));
 	}
 
 	@Override
@@ -54,47 +64,48 @@ public class Stroj_Qlearner implements Stroj {
 		Karta izbrana = null;
 		//rabim vedit v kakem vrstnem redu so "vRoki" da lahk update-am Qtabelo
 		//razporejeni so po barvni nato znotraj tega po vrednosti
-		
+
 		//if(random.num > EPSILON) -> pick random card ELSE pick max
 		//if vRoki.length == 1 (pomeni zadni stih) -> update Qtabelo in povecaj EPSILON
 		//if stPartije == 10000 -> print Qtabelo
-		
-		if(rand.nextDouble()>EPSILON){
-			izbrana = ustrezne.izberiNakljucno(this.rand); 
+
+		if(rand.nextFloat()>EPSILON){
+			izbrana = ustrezne.izberiNakljucno(this.rand);
 		} else {
 			Karta[] ustrezneTab = ustrezne.vTabelo();
-			int[][] ustrezneAkcije = new int[2][ustrezne.steviloKart()];
+			int[] ustrezneAkcije = new int[ustrezne.steviloKart()];
 
+			//zgradis tabelo vrednosti in barv
 			for(int i = 0; i<ustrezne.steviloKart(); i++){
-				ustrezneAkcije[0][i] = ustrezneTab[i].vrniBarvo();
-				ustrezneAkcije[1][i] = ustrezneTab[i].vrniVrednost();
+				ustrezneAkcije[i] = ustrezneTab[i].indeks();
 			}
-			int[] izbranBV = Qmax(ustrezneAkcije);
-			
-			izbrana = Karta.objekt(Karta.bv2indeks(izbranBV[0],izbranBV[1]));
+
+			izbrana = Karta.objekt(Qmax(ustrezneAkcije));
 		}
-		
-	
-		akcije[0][13-vRoki.steviloKart()] = izbrana.vrniBarvo();
-		akcije[1][13-vRoki.steviloKart()] = izbrana.vrniVrednost();
-	
-		/*if(stPartije >= 9999 || stPartije == 4999)
-			System.out.println(Arrays.deepToString(Qtabela));*/
+
+		karteNaMizi[0] = (short)izbrana.indeks();
+
+		for(int i = 0; i < karteNaMizi.length; i++) {
+			akcije[13-vRoki.steviloKart()][i] = karteNaMizi[i];
+		}
+		//System.out.println(Arrays.toString(karteNaMizi));
 
 		vRoki.odstrani(izbrana);
 		return izbrana;
-		//OPOMBA: moram vklucit se kartenamizi		
     }
 
     @Override
 	public void rezultat(int[] tocke){
-		if(tocke[polozaj] != 0) {
+		if(tocke[polozaj] != 0) { //ce zmagam
 			posodobiQtabelo(tocke[polozaj]);
 		} else {
 			posodobiQtabelo(-tocke[(polozaj+1)%4]);
 		}
-	
-		EPSILON += 0.00002;
+
+		if(stPartije >= 200000)
+			printQtabela();
+
+		EPSILON += 0.0000066f;
 	}
 
 	private MnozicaKart veljavnaPoteza() {
@@ -102,7 +113,10 @@ public class Stroj_Qlearner implements Stroj {
             return vRoki;
         }
 
-        int barvaPrve = prva.vrniBarvo();
+		int prvi = (zacetnik+4-polozaj)%4;
+		//System.out.println(Arrays.toString(karteNaMizi));
+		//System.out.println(prvi + " = (" + polozaj+ "+4-"+zacetnik+") mod4");
+        int barvaPrve = Karta.objekt((int)karteNaMizi[prvi]).vrniBarvo();
 
         MnozicaKart ujemajoce = vRoki.karteVBarvi(barvaPrve);
         if (!ujemajoce.jePrazna()) {
@@ -118,40 +132,135 @@ public class Stroj_Qlearner implements Stroj {
         return vRoki;
 	}
 
-	private int[] Qmax(int[][] ustrAkcije) {
-		int ix = ustrAkcije[0][0], iy = ustrAkcije[1][0];
-		double maxQval = 0.0;
-		
-		int stKart = ustrAkcije[0].length;
-		for(int i = 0; i<stKart; i++){
-			int x = ustrAkcije[0][i];
-			int y = ustrAkcije[1][i];
-			double zbr = Qtabela[13-stKart][x][y-2];
+	public int Qmax(int[] ustrAkcije) {
+		float maxQval = 0; int iX = ustrAkcije[0];
 
-			if(zbr > maxQval){
-				maxQval = zbr;
-				ix = x; iy = y;
+		if(polozaj == zacetnik) {
+			//jaz sem zacetni => na mizi ni nobene druge karte => preglej cel blok za vsako ustrezno
+			for(int i = 0; i<ustrAkcije.length; i++){
+				for(int j = 0; j<52; j++){
+					for(int z = 0; z<52; z++){
+						for(int t = 0; t<52; t++){
+							float trenutniQ = Qtabela[ustrAkcije[i]][j][z][t];
+
+							if(trenutniQ > maxQval){
+								maxQval= trenutniQ;
+								iX = ustrAkcije[i];
+							}
+						}
+					}
+				}
+			}
+
+		} else if((zacetnik+1)%4 == polozaj) {
+			for(int i = 0; i<ustrAkcije.length; i++){
+				for(int j = 0; j<52; j++){
+					for(int z = 0; z<52; z++){
+						float trenutniQ = Qtabela[ustrAkcije[i]][j][z][karteNaMizi[3]];
+
+						if(trenutniQ > maxQval){
+							maxQval= trenutniQ;
+							iX = ustrAkcije[i];
+						}
+
+					}
+				}
+			}
+		} else if((zacetnik+2)%4 == polozaj) {
+			for(int i = 0; i<ustrAkcije.length; i++){
+				for(int j = 0; j<52; j++){
+					float trenutniQ = Qtabela[ustrAkcije[i]][j][karteNaMizi[2]][karteNaMizi[3]];
+
+					if(trenutniQ > maxQval){
+						maxQval= trenutniQ;
+						iX = ustrAkcije[i];
+					}
+				}
+			}
+		} else {
+			for(int x : ustrAkcije){
+				float trenutniQ = Qtabela[x][karteNaMizi[1]][karteNaMizi[2]][karteNaMizi[3]];
+
+				if(trenutniQ > maxQval){
+					maxQval= trenutniQ;
+					iX = x;
+				}
 			}
 		}
-		
-		return new int[] {ix,iy};
+		return iX;
 	}
 
 	private void posodobiQtabelo(int rezTocke) {
-		
-		for(int i = 12; i>=0; i--){
-			int z = i; int x = akcije[0][i]; int y = akcije[1][i]-2; 
-			Qtabela[z][x][y] += potenca(ALPHA,13-i)*rezTocke;
-			//System.out.println(z + " " + x + " " + (y+2) + " : " + Qtabela[z][x][y]);
-		}
+		//System.out.println(Arrays.deepToString(akcije));
+		for(int x = 12; x>=0; x--){
+			int limitaI = akcije[x][1]==-1 ? 52:akcije[x][1]+1;
+				int spodnjaMejaI = limitaI==-1 ? 0:limitaI-1;
+
+			for(int i = spodnjaMejaI; i<limitaI; i++){
+				
+				int limitaJ = akcije[x][2]==-1 ? 52:akcije[x][2]+1;
+					int spodnjaMejaJ = limitaJ==-1 ? 0:limitaJ-1;
+
+				for(int j = spodnjaMejaJ; j<limitaJ; j++){
+
+					int limitaZ = akcije[x][3]==-1 ? 52:akcije[x][3]+1;
+						int spodnjaMejaZ = limitaZ==-1 ? 0:limitaZ-1;
+
+					for(int z = spodnjaMejaZ; z<limitaZ; z++){
+
+						Qtabela[akcije[x][0]][i][j][z] += potenca(ALPHA,13-x)*rezTocke;
+						
+						//System.out.println(limitaI +", "+spodnjaMejaI +", "+ limitaJ +", "+ spodnjaMejaJ +", "+limitaZ +", "+spodnjaMejaZ);
+						//System.out.println(Qtabela[akcije[x][0]][i][j][z]);
+					}
+				
+				}
+			
+			}
+
+		} 
 
 	}
 
-	private double potenca(double st, int pot){
-		double produkt = 1;
+	private float potenca(float st, int pot){
+		float produkt = 1;
 		for(int i = 0; i<pot; i++){
-			produkt *= st;		
+			produkt *= st;
 		}
 		return produkt;
+	}
+
+	private void printQtabela() {
+
+		System.out.print("{");
+			for(int cetrta = 0; cetrta < 52; cetrta++) {
+				System.out.print("{");
+				for(int tretja = 0; tretja < 52; tretja++) {
+					System.out.print("{");
+					for(int druga = 0; druga < 52; druga++) {
+						System.out.print("{");
+						for(int prva = 0; prva < 52; prva++) {
+							if(prva != 51) {
+								System.out.print(Qtabela[0][0][druga][prva] + "f, ");
+							} else {
+								if(druga != 51)
+									System.out.print(Qtabela[cetrta][tretja][druga][prva] + "f}, ");
+								else
+									System.out.print(Qtabela[cetrta][tretja][druga][prva] + "f}");
+							}
+						}
+					}
+					if(tretja != 51)
+						System.out.print("}, ");
+					else
+						System.out.print("}");
+				}
+				if(cetrta != 51)
+					System.out.print("}, ");
+				else
+					System.out.print("}");
+			}
+			System.out.println("}");
+
 	}
 }
