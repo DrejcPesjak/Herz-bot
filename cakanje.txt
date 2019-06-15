@@ -1,0 +1,12 @@
+
+# Ta datoteka podaja "cakalne "case (v milisekundah) za posamezna
+# ``animirana'' dejanja.
+
+# koliko "casa "cakamo, preden se "stih premakne proti dobitniku
+CAKANJE_PRED_PREMIKOM_STIHA = 750
+
+# koliko "casa "cakamo, preden se "stih zapre (odstrani z osrednje plo"s"ce)
+CAKANJE_PRED_ZAPRTJEM_STIHA = 750
+
+# koliko "casa "cakamo, potem ko ra"cunalnik izigra karto
+CAKANJE_PO_RACUNALNIKOVI_POTEZI = 500

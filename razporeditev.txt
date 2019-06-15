@@ -1,0 +1,12 @@
+
+# --- Primeri razporeditev ---
+#
+# Vsaka razporeditev naj bo zapisana v svoji vrstici.  Prazne vrstice in
+# tiste, ki se pri"cno z znakom #, se ignorirajo.  Karte posameznih igralcev
+# so lahko navedene v poljubnem vrstnem redu.
+
+sA sK s6 s4 pK p7 p3 aK a4 rQ r5 r4 r2 | sJ s9 s3 s2 p5 p4 a9 a2 rJ rT r8 r7 r3 | sT s7 s5 pQ pJ p9 p6 aA aJ a7 a6 a3 rA | sQ s8 pA pT p8 p2 aQ aT a8 a5 rK r9 r6
+s5 s3 p5 aA a9 a7 a5 a2 rK r8 r5 r3 r2 | sK s9 s7 s2 pJ p4 p3 aQ aJ rQ rJ r6 r4 | sQ sT s8 s6 pK pT p7 p6 aK aT a3 r9 r7 | sA sJ s4 pA pQ p9 p8 p2 a8 a6 a4 rA rT
+sQ s9 s7 s6 s4 pA pK p2 aQ a4 rA r9 r7 | s8 s2 pQ pT aK aJ a7 a3 rQ rJ r6 r5 r2 | sA sJ s5 p9 p8 p6 p3 aA aT a8 a2 r8 r3 | sK sT s3 pJ p7 p5 p4 a9 a6 a5 rK rT r4
+sQ s6 s5 s3 s2 p6 p3 p2 aQ a7 r9 r8 r4 | sK sT s7 s4 pJ p8 p5 aA a6 a2 r6 r3 r2 | sJ s9 pQ p9 p4 aK aJ a8 a5 a4 a3 rA r5 | sA s8 pA pK pT p7 aT a9 rK rQ rJ rT r7
+sK s6 s2 pJ p8 p3 p2 a7 rK rT r9 r7 r2 | sA sT s5 s4 s3 pQ pT aA a5 a3 a2 rQ r6 | sQ sJ s9 s8 s7 pA p9 p5 aJ a9 rA rJ r5 | pK p7 p6 p4 aK aQ aT a8 a6 a4 r8 r4 r3
